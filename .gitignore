@@ -1,0 +1,10 @@
+node_modules/
+dist/
+src-tauri/target/
+public/cmaps/
+public/standard_fonts/
+public/wasm/
+src-tauri/release-config.json
+.qa/
+artifacts/
+src-tauri/gen/

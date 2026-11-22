@@ -1,0 +1,9 @@
+CREATE TABLE pdf_index(
+    entry INTEGER PRIMARY KEY REFERENCES entries(id) ON DELETE CASCADE,
+    modified INTEGER NOT NULL, size INTEGER NOT NULL, pages INTEGER NOT NULL
+);
+CREATE TABLE pdf_text(
+    entry INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+    page INTEGER NOT NULL, text TEXT NOT NULL, PRIMARY KEY(entry,page)
+);
+PRAGMA user_version=2;
