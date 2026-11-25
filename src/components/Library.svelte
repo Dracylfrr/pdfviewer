@@ -9,7 +9,7 @@
   } = $props();
   type Column = {path:string;title:string;items:Entry[]};
   type Branch = {entry:Entry;depth:number};
-  let view = $state('Columns');
+  let view = $state('Tree');
   let trail = $state<Entry[]>([]);
   let columns = $state<Column[]>([]);
   let columnStrip=$state<HTMLDivElement>();

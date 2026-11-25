@@ -1,8 +1,8 @@
 # PDF Viewer
 
-PDF Viewer is a local desktop reader for PDFs already organized in folders. Version **0.3.2** is a development preview for Windows x64.
+PDF Viewer is a local desktop reader for PDFs already organized in folders. Version **0.3.3** is a development preview for Windows x64.
 
-Choose a library folder, browse it in Columns, Tree, or Graph, then click a PDF to open it. Drag the dividers to resize navigation, individual library columns, or annotations. The reader has a scale slider plus **Fit width** and **Fit page**. Graph cards show the folder path, use color to identify each level, and label levels by number. The app keeps highlights, underlines, bookmarks, notes, tags, and reading settings in SQLite. **Pastel Blue** is the default application theme. The reader's paper theme has its own selector.
+Choose a library folder, browse it in Tree (the default), Columns, or Graph, then click a PDF to open it. Drag the dividers to resize navigation, individual library columns, or annotations. The reader has a scale slider plus **Fit width** and **Fit page**. Graph cards show the folder path, use color to identify each level, and label levels by number. The app keeps highlights, underlines, bookmarks, notes, tags, and reading settings in SQLite. **Pastel Blue** is the default application theme. The reader's paper theme has its own selector.
 
 Home shows first-page thumbnails for opened PDFs. Select a card to resume its saved page. Use **Print** or **Ctrl+P** from the reader to print the full PDF or choose a smaller page range. Use **Clear recent PDFs** on Home to clear the recent list while keeping reading progress and annotations. Settings includes a startup update check toggle.
 

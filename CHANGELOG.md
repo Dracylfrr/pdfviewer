@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 development preview
+
+- Open libraries in Tree view by default.
+
 ## 0.3.2 development preview
 
 - Print all PDF pages by default, with an editable range and cancelable preparation.

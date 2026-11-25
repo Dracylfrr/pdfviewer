@@ -1,6 +1,6 @@
 # Releasing
 
-The canonical version is in `src-tauri/Cargo.toml`. Tauri uses it for the app and installer. The local preview is 0.3.2.
+The canonical version is in `src-tauri/Cargo.toml`. Tauri uses it for the app and installer. The local preview is 0.3.3.
 
 1. Run the test suite, package Windows builds, and finish the release checks in the implementation specification.
 2. Create a Tauri signing key with `npm run tauri -- signer generate -- -w <private-key-path>`. Keep the private key outside the repository.
