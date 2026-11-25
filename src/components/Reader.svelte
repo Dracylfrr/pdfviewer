@@ -39,6 +39,8 @@
   let pageRatio=$state(1.414);
   let printDialog=$state<HTMLDialogElement>();
   let printFrom=$state(1), printTo=$state(1), printing=$state(false), printError=$state("");
+  let preparedPages=$state(0);
+  let printJob:AbortController|undefined;
   let zoomDraft=$state<number|null>(null);
   let zoomTimer:ReturnType<typeof setTimeout>|undefined;
   let notePages=$derived(Map.groupBy(notes.filter(n=>n.page),n=>n.page));
@@ -82,7 +84,7 @@
       } catch (e){if(!cancelled&&!failure)failure='Unable to render this PDF. '+String(e)}
     }
     load();
-    return ()=>{cancelled=true;++searchToken;clearTimeout(zoomTimer);void task?.destroy()};
+    return ()=>{cancelled=true;++searchToken;clearTimeout(zoomTimer);printJob?.abort();void task?.destroy()};
   });
   $effect(()=>{
     if(!initialized)return;
@@ -197,7 +199,9 @@
     readingState.zoom=mode;
   }
   function showPrint(){
-    printFrom=printTo=readingState.page;
+    if(!pdf)return;
+    printFrom=1;
+    printTo=pdf.numPages;
     printError='';
     printDialog?.showModal();
   }
@@ -208,11 +212,20 @@
       printError='Enter a valid page range.';
       return;
     }
-    if(printTo-printFrom>=40){printError='Choose up to 40 pages per print job.';return}
-    printError='';printing=true;
-    try { await printPdf(pdf,printFrom,printTo);printDialog?.close(); }
-    catch { printError='Couldn’t open the print dialog for these pages.'; }
-    finally {printing=false}
+    const job=new AbortController();
+    printJob=job;printError='';printing=true;preparedPages=0;
+    try {
+      await printPdf(pdf,printFrom,printTo,job.signal,count=>preparedPages=count,async()=>{
+        printDialog?.close();
+        await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+      });
+    } catch {
+      if(job.signal.aborted)printDialog?.close();
+      else {
+        printError='Couldn’t open the print dialog for these pages.';
+        if(!printDialog?.open)printDialog?.showModal();
+      }
+    } finally {printing=false;printJob=undefined}
   }
   function keyboard(e:KeyboardEvent){
     if(!pdf||e.defaultPrevented)return;
@@ -236,14 +249,15 @@
     <dialog class="print-dialog" bind:this={printDialog} aria-labelledby="print-title" oncancel={event=>{if(printing)event.preventDefault()}}>
       <form onsubmit={submitPrint}>
         <h2 id="print-title">Print PDF</h2>
-        <p class="muted">Select up to 40 pages per print job.</p>
+        <p class="muted">All pages are selected by default. Change the range to print fewer pages.</p>
         <div class="print-range">
           <label>From page <input type="number" min="1" max={pdf.numPages} required bind:value={printFrom} disabled={printing}></label>
           <label>To page <input type="number" min="1" max={pdf.numPages} required bind:value={printTo} disabled={printing}></label>
         </div>
         {#if printError}<p role="alert">{printError}</p>{/if}
+        {#if printing}<p role="status" class="muted">Preparing pages: {preparedPages} of {printTo-printFrom+1}</p>{/if}
         <div class="print-actions">
-          <button type="button" disabled={printing} onclick={()=>printDialog?.close()}>Cancel</button>
+          <button type="button" onclick={()=>printing?printJob?.abort():printDialog?.close()}>Cancel</button>
           <button class="primary" disabled={printing}>{printing?'Preparing pages…':'Continue to print'}</button>
         </div>
       </form>

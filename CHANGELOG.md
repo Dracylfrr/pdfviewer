@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 development preview
+
+- Print all PDF pages by default, with an editable range and cancelable preparation.
+
 ## 0.3.1 development preview
 
 - Clear the recent PDFs list while keeping reading progress and annotations.
