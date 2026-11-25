@@ -33,7 +33,7 @@ fn migrates_and_reopens_with_notes_and_reading_state() {
             .unwrap();
         conn.execute("INSERT INTO notes(id,entry,kind,page,quote,content,color,rects) VALUES('n',?,'highlight',1,'text','comment','#ffffff','[{\"x\":0.1,\"y\":0.2,\"w\":0.3,\"h\":0.1}]')",[doc]).unwrap();
         conn.execute(
-            "INSERT INTO reading VALUES (?,1,1.25,'single','Sepia')",
+            "INSERT INTO reading(entry,page,zoom,mode,theme) VALUES (?,1,1.25,'single','Sepia')",
             [doc],
         )
         .unwrap();

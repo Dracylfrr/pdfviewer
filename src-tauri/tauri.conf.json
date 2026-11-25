@@ -5,5 +5,5 @@
   "build":{"beforeDevCommand":"npm run dev","beforeBuildCommand":"npm run build","devUrl":"http://localhost:1420","frontendDist":"../dist"},
   "app":{"windows":[{"title":"PDF Viewer","width":1320,"height":840,"minWidth":800,"minHeight":600}],
   "security":{"csp":"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost; font-src 'self' data: blob:"}},
-  "bundle":{"active":true,"targets":["nsis"],"icon":["icons/icon.ico"],"windows":{"nsis":{"installerIcon":"icons/icon.ico","uninstallerIcon":"icons/icon.ico"}}}
+  "bundle":{"active":true,"targets":["nsis"],"icon":["icons/icon.ico"],"windows":{"nsis":{"installMode":"currentUser","installerIcon":"icons/icon.ico","uninstallerIcon":"icons/icon.ico"}}}
 }

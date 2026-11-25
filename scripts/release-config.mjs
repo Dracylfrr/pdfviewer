@@ -7,5 +7,5 @@ const version=/^version\s*=\s*"([^"]+)"/m.exec(cargo)?.[1];
 if(process.env.GITHUB_REF_NAME!=='v'+version)throw new Error('The tag must match Cargo.toml.');
 writeFileSync('src-tauri/release-config.json',JSON.stringify({
   bundle:{createUpdaterArtifacts:true},
-  plugins:{updater:{pubkey:key,endpoints:[`https://github.com/${repo}/releases/latest/download/latest.json`]}}
+  plugins:{updater:{pubkey:key,windows:{installMode:"quiet"},endpoints:[`https://github.com/${repo}/releases/latest/download/latest.json`]}}
 },null,2));

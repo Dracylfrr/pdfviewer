@@ -1,6 +1,6 @@
 # Releasing
 
-The canonical version is in `src-tauri/Cargo.toml`. Tauri uses it for the app and installer. The local preview is 0.1.0.
+The canonical version is in `src-tauri/Cargo.toml`. Tauri uses it for the app and installer. The local preview is 0.3.1.
 
 1. Run the test suite, package Windows builds, and finish the release checks in the implementation specification.
 2. Create a Tauri signing key with `npm run tauri -- signer generate -- -w <private-key-path>`. Keep the private key outside the repository.
@@ -9,6 +9,6 @@ The canonical version is in `src-tauri/Cargo.toml`. Tauri uses it for the app an
 5. The tag workflow builds the signed x64 NSIS installer and `latest.json`, adds a SHA-256 checksum, and prepares a draft. Verify the draft assets and release notes before publishing.
 6. Verify a signed upgrade on a clean Windows profile with a future higher version and confirm that the release feed fails gracefully offline.
 
-Ordinary local builds do not have a release feed. The preview installer produced locally is unsigned. Tauri updater signing differs from Windows Authenticode signing.
+Local builds check GitHub for newer versions. In-app installation requires a configured signed feed. Signed updates are downloaded in the background and installed silently on normal app close for the per-user NSIS installation. The app starts the updated version on the next launch. The preview installer produced locally is unsigned. Tauri updater signing differs from Windows Authenticode signing.
 
 For a standalone archive, zip the optimized `pdfviewer.exe` with the license notices. It still requires WebView2 and uses the per-user metadata folder by default. Set `PDFVIEWER_DATA_DIR` to an existing directory to select a separate metadata location.

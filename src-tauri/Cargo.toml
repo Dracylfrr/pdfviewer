@@ -1,6 +1,6 @@
 [package]
 name = "pdfviewer"
-version = "0.1.0"
+version = "0.3.1"
 edition = "2021"
 
 [build-dependencies]
@@ -16,5 +16,7 @@ sha2 = "0.10"
 tauri-plugin-updater = "2.13"
 serde_json = "1"
 
-[dev-dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json"] }
+semver = "1"
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 tempfile = "3"

@@ -5,6 +5,8 @@
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { baseName, call, children, colors, kinds, type Library as LibraryModel, type Entry, type Hit, type Note, type Rect } from './model';
   import Library from './components/Library.svelte';
+  import Home from './components/Home.svelte';
+  import PaneDivider from './components/PaneDivider.svelte';
 
   import Rows from './components/Rows.svelte';
   import Updates from './components/Updates.svelte';
@@ -22,15 +24,35 @@
   let query=$state(''), hits=$state<Hit[]>([]);
   let searchBox:HTMLInputElement;
   let searching=$state(false), searchVersion=0, contextVersion=0, token=0;
+  let navigationVersion=0;
   let left=$state(true), right=$state(true), settings=$state(false);
   let chrome=$state(localStorage.getItem('chrome-preference')||'Pastel Blue');
   let saving=$state(0);
+  let updateControls=$state<{applyPending:()=>Promise<void>}>();
+  let readerControl=$state<{flushProgress:()=>Promise<void>}>();
   let indexJob:AbortController|undefined;
   let indexingText=$state(false);
   let pending=new Map<string,{timer:ReturnType<typeof setTimeout>;note:Note}>();
   let writes=Promise.resolve();
   let linkSource=$state<Entry|null>(null);
   let tagInput=$state('');
+  let workspaceWidth=$state(0);
+  let libraryWidth=$state(savedWidth('library-width',310));
+  let notesWidth=$state(savedWidth('notes-width',286));
+  let browsingWidth=$state(savedWidth('browse-width',560));
+
+  let visibleNotes=$derived(Boolean(right&&(document??selected)));
+  let notesSize=$derived(Math.min(notesWidth,Math.max(224,Math.floor(workspaceWidth*.34))));
+  let libraryMax=$derived(Math.max(166,workspaceWidth-(visibleNotes?notesSize+9:0)-330));
+  let librarySize=$derived(Math.min(document?libraryWidth:browsingWidth,libraryMax));
+  let notesMax=$derived(Math.max(224,Math.floor(workspaceWidth*.34)));
+  function savedWidth(key:string,fallback:number){
+    const value=Number(localStorage.getItem(key));
+    return value>0?value:fallback;
+  }
+  $effect(()=>localStorage.setItem('library-width',String(libraryWidth)));
+  $effect(()=>localStorage.setItem('browse-width',String(browsingWidth)));
+  $effect(()=>localStorage.setItem('notes-width',String(notesWidth)));
   let context=$derived(document??selected);
   let filtered=$derived(notes.filter(n=>filter==='All'||(filter==='Notes'?['document','selection','folder'].includes(n.kind):n.kind===filter))
     .sort((a,b)=>sort==='Page'?(a.page??0)-(b.page??0):sort==='Color'?a.color.localeCompare(b.color):sort==='Newest'?notes.indexOf(b)-notes.indexOf(a):notes.indexOf(a)-notes.indexOf(b)));
@@ -49,7 +71,11 @@
         revision++;
       }),
       listen<string>('index-error',e=>{status='';error(e.payload)}),
-      getCurrentWindow().onCloseRequested(async()=>{await flushAll()}),
+      getCurrentWindow().onCloseRequested(async()=>{
+        await flushAll();
+        await readerControl?.flushProgress().catch(e=>console.warn('Could not save reading position.',e));
+        await updateControls?.applyPending();
+      }),
     ]);
     events.catch(e=>{if(!disposed)error(String(e))});
     attempt(loadLibraries);
@@ -81,14 +107,24 @@
   }
   async function changeLibrary(id:number){
     indexJob?.abort();
-    await flushAll();libraryId=id;selected=null;document=null;request=null;revision++;
+    const version=++navigationVersion;
+    await flushAll();
+    if(version!==navigationVersion)return;
+    libraryId=id;selected=null;document=null;request=null;revision++;
   }
-  async function choose(item:Entry|null){await flushAll(); selected=item; document=null; request=null; focused='';}
+  async function choose(item:Entry|null){
+    const version=++navigationVersion;
+    await flushAll();
+    if(version!==navigationVersion)return;
+    selected=item;document=null;request=null;focused='';
+  }
   async function openDocument(item:Entry,page?:number|null){
     if(item.folder){await choose(item);return}
     if(item.missing){await choose(item);error('This PDF is missing. Its notes are still in the library.');return}
+    const version=++navigationVersion;
     await flushAll();
-    libraryId=item.library; selected=item; document=item; focused='';
+    if(version!==navigationVersion)return;
+    libraryId=item.library;selected=item;document=item;focused='';
     request=page?{page,token:++token}:null;
   }
   async function search(){
@@ -209,6 +245,7 @@
 <div class="app" data-theme={chrome}>
   <header class="topbar">
     <div class="brand"><img class="book-icon" src="/book.svg" alt=""> PDF Viewer</div>
+    <button aria-current={!context?"page":undefined} onclick={()=>attempt(()=>choose(null))}>Home</button>
     {#if libraries.length}
       <select aria-label="Library" value={libraryId} onchange={e=>changeLibrary(Number(e.currentTarget.value))}>
         {#each libraries as item (item.id)}<option value={item.id} title={item.root}>{baseName(item.root)}</option>{/each}
@@ -236,7 +273,7 @@
       {#if library}<button onclick={()=>attempt(async()=>{if(confirm('Remove this library from PDF Viewer? Its files will stay in place.')){await call('remove_library',{id:libraryId});await loadLibraries();await changeLibrary(libraryId)}})}>Remove library from app</button>{/if}
     </section>
   {/if}
-  <Updates show={settings} flush={flushAll}/>
+  <Updates show={settings} bind:this={updateControls}/>
   {#if hits.length}
     <div class="results">
       <div class="results-title"><strong>Search results</strong><button onclick={()=>hits=[]}>Close</button></div>
@@ -246,17 +283,19 @@
     </div>
   {/if}
   {#if linkSource}<div class="status">Select another PDF to link to {linkSource.name}. <button onclick={()=>linkSource=null}>Cancel</button></div>{/if}
-  <main class="workbench" class:has-document={Boolean(document)}>
+  <main class="workbench" bind:clientWidth={workspaceWidth}>
     {#if library&&left}
-      <aside class="navigator" aria-label="Library navigation">
+      <aside class="navigator" aria-label="Library navigation" style:width={librarySize+"px"}>
         {#key library.id}<Library {library} {selected} {revision} choose={item=>attempt(()=>choose(item))} open={item=>attempt(()=>openDocument(item))} {error}/>{/key}
       </aside>
+      <PaneDivider label="Resize library pane" min={166} max={libraryMax} value={librarySize}
+        resize={width=>{if(document)libraryWidth=width;else browsingWidth=width}}/>
     {/if}
     {#if document}
-      {#key document.id}{#await import('./components/Reader.svelte') then module}<module.default entry={document} {notes} requested={request} add={addNote} {activate} {error}/>{:catch reason}<div class='empty'>{String(reason)}</div>{/await}{/key}
+      {#key document.id}{#await import('./components/Reader.svelte') then module}<module.default bind:this={readerControl} entry={document} {notes} requested={request} add={addNote} {activate} {error} info={()=>document&&attempt(()=>choose(document))}/>{:catch reason}<div class='empty'>{String(reason)}</div>{/await}{/key}
     {:else if selected}
       <section class="details">
-        <span class="detail-icon" aria-hidden="true">{#if selected.folder}▰{:else}<img class="book-icon" src="/book.svg" alt="">{/if}</span>
+        <span class="detail-icon" aria-hidden="true"><img class="book-icon" src={selected.folder?"/folder.svg":"/book.svg"} alt=""></span>
         <h1>{selected.name}</h1>
         <p class="muted">{baseName(selected.parent)}</p>
         {#if selected.folder}
@@ -279,13 +318,11 @@
         {/if}
       </section>
     {:else}
-      <section class="empty"><span class="detail-icon" aria-hidden="true"><img class="book-icon" src="/book.svg" alt=""></span><h1>{library?'Your PDF library':'Open your PDF library'}</h1>
-        <p>{library?'Select a folder or PDF to get started.':'Choose an existing folder to browse and read its PDFs.'}</p>
-        {#if !library}<button class="primary" onclick={()=>attempt(addLibrary)}>Choose Library Folder</button>{/if}
-      </section>
+      <Home hasLibraries={libraries.length>0} addLibrary={()=>attempt(addLibrary)} open={item=>attempt(()=>openDocument(item))}/>
     {/if}
     {#if right&&context}
-      <aside class="notes" aria-label="Annotations">
+      <PaneDivider label="Resize notes pane" min={224} max={notesMax} value={notesSize} reverse resize={width=>notesWidth=width}/>
+      <aside class="notes" aria-label="Annotations" style:width={notesSize+"px"}>
         <div class="notes-header"><h2>{context.folder?'Folder notes':'Annotations'}</h2><small role="status">{saving?'Saving…':'Saved'}</small></div>
         <div class="note-actions">
           <button onclick={()=>addNote(context?.folder?'folder':'document',null)}>Add note</button>
