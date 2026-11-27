@@ -2568,13 +2568,10 @@ dependencies = [
 
 [[package]]
 name = "pdfviewer"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "notify",
- "reqwest",
  "rusqlite",
- "rustls",
- "semver",
  "serde",
  "serde_json",
  "sha2 0.10.9",

@@ -2,7 +2,6 @@
 
 mod index;
 mod recovery;
-mod releases;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -75,7 +74,6 @@ fn data_path(app: &tauri::AppHandle) -> Result<PathBuf> {
 }
 
 fn main() {
-    let _ = rustls::crypto::ring::default_provider().install_default();
     let context = tauri::generate_context!();
     let mut builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
     if context.config().plugins.0.contains_key("updater") {
@@ -102,7 +100,6 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             updates_enabled,
-            releases::github_update,
             store::recent_pdfs,
             store::clear_recent_pdfs,
             store::mark_opened,

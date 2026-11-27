@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.4
+
+- Use the signed in-app update feed without showing hosting-provider messages.
+
 ## 0.3.3 development preview
 
 - Open libraries in Tree view by default.
